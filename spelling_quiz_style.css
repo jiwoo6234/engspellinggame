@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>중학생 영단어 스펠링 퀴즈</title>
+  <meta name="description" content="중학생 수준의 영단어 스펠링 맞히기 게임" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app" role="application" aria-label="영단어 스펠링 퀴즈">
+    <header>
+      <div class="title">영단어 스펠링 퀴즈<small>중학생(EFL) 맞춤 | 정답 스펠링을 고르세요</small></div>
+      <div class="controls">
+        <label>난이도
+          <select id="level">
+            <option value="easy">쉬움</option>
+            <option value="medium" selected>보통</option>
+            <option value="hard">어려움</option>
+          </select>
+        </label>
+        <label>문항수
+          <select id="count">
+            <option>10</option>
+            <option selected>20</option>
+            <option>30</option>
+          </select>
+        </label>
+        <label>제한시간(초)
+          <input id="limit" type="number" min="0" value="0" style="width:88px" title="0은 무제한"/>
+        </label>
+        <button id="start" class="primary">게임 시작</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="statusbar">
+        <div class="progress" aria-label="진행률"><div id="bar"></div></div>
+        <div class="stats" aria-live="polite">
+          <div>점수: <b id="score">0</b></div>
+          <div>문항: <b id="qnum">0</b>/<span id="qtotal">0</span></div>
+          <div>시간: <b id="time">0</b>s</div>
+        </div>
+      </div>
+
+      <section class="card" id="quiz">
+        <div class="prompt">정답 스펠링을 고르세요 (1~4 단축키 가능)</div>
+        <h1 class="word" id="question">시작을 눌러 주세요</h1>
+        <div class="choices" id="choices"></div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+      </section>
+
+      <section class="card" id="results" style="display:none">
+        <h2>결과</h2>
+        <p>최종 점수: <b id="finalScore">0</b> / <span id="finalTotal">0</span></p>
+        <div class="actions">
+          <button id="retry">다시 하기</button>
+          <button id="shuffle" class="primary">새 문제로</button>
+        </div>
+        <h3>오답 리뷰</h3>
+        <ul id="review" class="review"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <span>ⓘ 팁: 키보드 <b>1-4</b>로 빠르게 답할 수 있어요.</span>
+      <span>制作者: GitHub Pages에서 정적 사이트로 바로 배포 가능합니다.</span>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

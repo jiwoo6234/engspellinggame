@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>중학생 영단어 스펠링 퀴즈</title>
+  <meta name="description" content="중학생 수준의 영단어 스펠링 맞히기 게임" />
+  <style>
+    :root{
+      --bg:#0f172a;        /* slate-900 */
+      --panel:#111827;     /* gray-900 */
+      --muted:#1f2937;     /* gray-800 */
+      --text:#e5e7eb;      /* gray-200 */
+      --sub:#9ca3af;       /* gray-400 */
+      --acc:#22c55e;       /* green-500 */
+      --acc-2:#60a5fa;     /* blue-400 */
+      --warn:#f59e0b;      /* amber-500 */
+      --danger:#ef4444;    /* red-500 */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 10% 0%, #0b1229, var(--bg));
+      color:var(--text);
+      min-height:100svh;
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .app{
+      width: min(960px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:24px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+    }
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+    .title{font-weight:800; letter-spacing:.2px; font-size:clamp(20px, 2.6vw, 28px)}
+    .title small{display:block; font-weight:500; color:var(--sub); font-size:12px}
+    .controls{display:flex; gap:12px; flex-wrap:wrap}
+    select, button, input[type="number"]{
+      background:var(--panel); color:var(--text); border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:10px 12px; font-size:14px; outline:none;
+    }
+    button{cursor:pointer; font-weight:700; transition:.15s transform ease, .2s background ease}
+    button.primary{background:linear-gradient(90deg, var(--acc-2), var(--acc)); border:none}
+    button:active{transform:translateY(1px)}
+    main{margin-top:18px; display:grid; gap:16px}
+
+    .statusbar{
+      display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center
+    }
+    .progress{height:10px; background:var(--muted); border-radius:999px; overflow:hidden}
+    .progress > div{height:100%; width:0; background:linear-gradient(90deg, var(--acc-2), var(--acc)); transition: width .3s ease}
+    .stats{font-size:13px; color:var(--sub); display:flex; gap:12px}
+
+    .card{
+      background:var(--panel); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px
+    }
+    .prompt{font-size:14px; color:var(--sub); margin-bottom:6px}
+    .word{font-size:clamp(26px, 4vw, 40px); font-weight:800; letter-spacing:.6px; margin:0 0 12px}
+    .choices{display:grid; grid-template-columns:1fr; gap:12px}
+
+    .choice{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:14px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      font-weight:700; cursor:pointer; transition:.15s transform ease, .2s border ease, .2s background ease;
+    }
+    .choice:hover{transform:translateY(-1px); border-color:rgba(255,255,255,0.18)}
+    .choice span.kbd{opacity:.6; font-size:12px}
+    .choice.correct{outline:2px solid var(--acc)}
+    .choice.wrong{outline:2px solid var(--danger)}
+    .choice[disabled]{opacity:.6; cursor:not-allowed}
+
+    .feedback{display:flex; gap:10px; align-items:center; font-size:14px}
+    .pill{padding:4px 10px; border-radius:999px; font-weight:800}
+    .pill.ok{background:rgba(34,197,94,.15); color:#a7f3d0; border:1px solid rgba(34,197,94,.35)}
+    .pill.no{background:rgba(239,68,68,.15); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
+
+    .actions{display:flex; gap:12px; flex-wrap:wrap}
+    .review{display:grid; gap:8px; font-size:14px}
+    .review li{list-style:none; background:var(--panel); border:1px solid rgba(255,255,255,.08); padding:10px 12px; border-radius:10px}
+
+    footer{margin-top:8px; color:var(--sub); font-size:12px; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap}
+
+    @media (min-width:720px){
+      .choices{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="영단어 스펠링 퀴즈">
+    <header>
+      <div class="title">영단어 스펠링 퀴즈<small>중학생(EFL) 맞춤 | 정답 스펠링을 고르세요</small></div>
+      <div class="controls">
+        <label>난이도
+          <select id="level">
+            <option value="easy">쉬움</option>
+            <option value="medium" selected>보통</option>
+            <option value="hard">어려움</option>
+          </select>
+        </label>
+        <label>문항수
+          <select id="count">
+            <option>10</option>
+            <option selected>20</option>
+            <option>30</option>
+          </select>
+        </label>
+        <label>제한시간(초)
+          <input id="limit" type="number" min="0" value="0" style="width:88px" title="0은 무제한"/>
+        </label>
+        <button id="start" class="primary">게임 시작</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="statusbar">
+        <div class="progress" aria-label="진행률"><div id="bar"></div></div>
+        <div class="stats" aria-live="polite">
+          <div>점수: <b id="score">0</b></div>
+          <div>문항: <b id="qnum">0</b>/<span id="qtotal">0</span></div>
+          <div>시간: <b id="time">0</b>s</div>
+        </div>
+      </div>
+
+      <section class="card" id="quiz">
+        <div class="prompt">정답 스펠링을 고르세요 (1~4 단축키 가능)</div>
+        <h1 class="word" id="question">시작을 눌러 주세요</h1>
+        <div class="choices" id="choices"></div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+      </section>
+
+      <section class="card" id="results" style="display:none">
+        <h2>결과</h2>
+        <p>최종 점수: <b id="finalScore">0</b> / <span id="finalTotal">0</span></p>
+        <div class="actions">
+          <button id="retry">다시 하기</button>
+          <button id="shuffle" class="primary">새 문제로</button>
+        </div>
+        <h3>오답 리뷰</h3>
+        <ul id="review" class="review"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <span>ⓘ 팁: 키보드 <b>1‑4</b>로 빠르게 답할 수 있어요.</span>
+      <span>制作者: GitHub Pages에서 정적 사이트로 바로 배포 가능합니다.</span>
+    </footer>
+  </div>
+
+  <script>
+    // ====== 중학생(EFL) 수준 단어 리스트 ======
+    const WORDS = [
+      "about","across","address","afraid","afternoon","animal","answer","arrive","beautiful","because","before","begin","both","borrow","breakfast","bridge","build","busy","career","certain","change","choose","church","classroom","clever","cloud","color","common","company","country","cousin","culture","danger","decide","delicious","different","difficult","dinner","discover","drink","during","earth","easy","electric","elephant","energy","engineer","enjoy","enough","environment","exercise","favorite","finally","finish","follow","foreign","forget","friend","future","garden","great","healthy","history","holiday","homework","hundred","important","include","international","journey","kitchen","language","library","listen","minute","moments","mountain","music","nature","ocean","parents","people","picture","planet","popular","practice","present","problem","protect","question","really","remember","river","science","season","secret","shoulder","sometimes","special","station","story","street","student","subject","sudden","together","tomorrow","traffic","training","usually","vacation","village","weather","welcome","window","wonderful","world","write"
+    ];
+
+    // ====== 유틸리티 ======
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+
+    // 철자 교란(난이도별) 생성기
+    function makeMisspellings(word, level = 'medium'){
+      const variants = new Set();
+      const vowels = ['a','e','i','o','u'];
+      const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+      const push = (w) => { if(w && w !== word && /^[a-z]+$/.test(w)) variants.add(w); };
+
+      // 1) 인접 문자 교환 (teh -> the)
+      for(let i=0;i<word.length-1;i++){
+        push(word.slice(0,i) + word[i+1] + word[i] + word.slice(i+2));
+      }
+      // 2) 모음 교체
+      for(let i=0;i<word.length;i++){
+        if(vowels.includes(word[i])){
+          const picks = level==='easy'? ['a','e','i','o','u'].filter(v=>v!==word[i]).slice(0,1)
+                       : level==='medium'? ['a','e','i','o','u'].filter(v=>v!==word[i]).slice(0,2)
+                       : ['a','e','i','o','u'].filter(v=>v!==word[i]);
+          for(const v of picks){ push(word.slice(0,i)+v+word.slice(i+1)); }
+        }
+      }
+      // 3) 누락/중복 문자
+      for(let i=0;i<word.length;i++){
+        if(level!=='easy') push(word.slice(0,i)+word.slice(i+1));
+        if(level!=='easy') push(word.slice(0,i)+word[i]+word[i]+word.slice(i+1));
+      }
+      // 4) 발음 혼동 규칙 일부
+      push(word.replaceAll('c','k'));
+      push(word.replaceAll('ph','f'));
+      push(word.replaceAll('qu','kw'));
+      push(word.replaceAll('ck','k'));
+
+      // 5) 무작위 한 글자 치환(어려움)
+      if(level==='hard'){
+        for(let i=0;i<word.length;i++){
+          const r = letters[Math.floor(Math.random()*letters.length)];
+          push(word.slice(0,i)+r+word.slice(i+1));
+        }
+      }
+
+      const out = Array.from(variants).filter(w => Math.abs(w.length - word.length) <= (level==='easy'?1:2));
+      return shuffle(out).slice(0, 8); // 넉넉히 만들어 두고 고르기
+    }
+
+    // 문제 생성기
+    function makeQuestion(level){
+      const answer = WORDS[Math.floor(Math.random()*WORDS.length)];
+      const wrongs = makeMisspellings(answer, level).filter(w => w !== answer);
+      const options = shuffle([answer, ...wrongs.slice(0, 3)]);
+      return { answer, options };
+    }
+
+    // 상태
+    const state = {
+      level:'medium',
+      total:20,
+      limit:0,
+      qIndex:0,
+      score:0,
+      started:false,
+      timer:null,
+      remain:0,
+      question:null,
+      review:[],
+    };
+
+    // 렌더링
+    function renderQuestion(){
+      const {answer, options} = state.question;
+      $('#question').textContent = '정답 스펠링을 고르세요';
+      const container = $('#choices');
+      container.innerHTML = '';
+
+      options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.innerHTML = `<span>${opt}</span><span class="kbd">${i+1}</span>`;
+        btn.addEventListener('click', () => choose(opt, btn));
+        container.appendChild(btn);
+      });
+
+      $('#feedback').textContent = '';
+      $('#qnum').textContent = state.qIndex + 1;
+      $('#qtotal').textContent = state.total;
+      $('#bar').style.width = `${(state.qIndex/state.total)*100}%`;
+    }
+
+    function choose(opt, btn){
+      if(!state.started) return;
+      const correct = opt === state.question.answer;
+      $$('.choice').forEach(b => b.setAttribute('disabled','true'));
+      if(correct){
+        btn.classList.add('correct');
+        state.score++;
+        $('#feedback').innerHTML = `<span class="pill ok">정답!</span> <span>잘했어요. 올바른 철자: <b>${state.question.answer}</b></span>`;
+      } else {
+        btn.classList.add('wrong');
+        const correctBtn = $$('.choice').find(b => b.textContent.trim().startsWith(state.question.answer));
+        if(correctBtn) correctBtn.classList.add('correct');
+        $('#feedback').innerHTML = `<span class="pill no">오답</span> <span>정답은 <b>${state.question.answer}</b> 입니다.</span>`;
+        state.review.push({
+          word: state.question.answer,
+          picked: opt
+        });
+      }
+      $('#score').textContent = state.score;
+      setTimeout(next, 650);
+    }
+
+    function next(){
+      state.qIndex++;
+      if(state.qIndex >= state.total){
+        finish();
+        return;
+      }
+      state.question = makeQuestion(state.level);
+      renderQuestion();
+    }
+
+    function start(){
+      state.level = $('#level').value;
+      state.total = parseInt($('#count').value, 10);
+      state.limit = parseInt($('#limit').value, 10) || 0; // 0은 무제한
+      state.qIndex = 0; state.score = 0; state.review = [];
+      state.started = true; $('#results').style.display='none';
+      $('#score').textContent = '0';
+      state.question = makeQuestion(state.level);
+      renderQuestion();
+      $('#bar').style.width = '0%';
+      if(state.timer){ clearInterval(state.timer); }
+      state.remain = state.limit;
+      $('#time').textContent = state.limit;
+      if(state.limit>0){
+        state.timer = setInterval(() => {
+          state.remain--; $('#time').textContent = state.remain;
+          if(state.remain <= 0){
+            clearInterval(state.timer); finish();
+          }
+        }, 1000);
+      } else {
+        $('#time').textContent = '∞';
+      }
+    }
+
+    function finish(){
+      state.started = false;
+      if(state.timer){ clearInterval(state.timer); }
+      $('#bar').style.width = '100%';
+      $('#finalScore').textContent = state.score;
+      $('#finalTotal').textContent = state.total;
+      $('#results').style.display='block';
+      const list = $('#review');
+      list.innerHTML = state.review.length? '' : '<li>훌륭해요! 오답이 없어요 🎉</li>';
+      state.review.slice(0, 30).forEach(({word, picked}) => {
+        const li = document.createElement('li');
+        li.textContent = `정답: ${word} | 선택: ${picked}`;
+        list.appendChild(li);
+      });
+    }
+
+    // 이벤트 바인딩
+    $('#start').addEventListener('click', start);
+    $('#retry').addEventListener('click', start);
+    $('#shuffle').addEventListener('click', () => { shuffle(WORDS); start(); });
+
+    // 단축키(1~4)
+    window.addEventListener('keydown', (e) => {
+      if(!state.started) return;
+      if(['1','2','3','4'].includes(e.key)){
+        const idx = parseInt(e.key,10)-1;
+        const btn = $$('.choice')[idx];
+        if(btn && !btn.hasAttribute('disabled')) btn.click();
+      }
+    });
+  </script>
+</body>
+</html>
